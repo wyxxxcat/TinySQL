@@ -16,6 +16,7 @@ package tablecodec
 import (
 	"bytes"
 	"encoding/binary"
+	"fmt"
 	"math"
 	"time"
 
@@ -51,6 +52,16 @@ const TableSplitKeyLen = 1 + idLen
 // TablePrefix returns table's prefix 't'.
 func TablePrefix() []byte {
 	return tablePrefix
+}
+
+// RecordPrefixSep returns table's prefix '_r'.
+func RecordPrefixSep() []byte {
+	return recordPrefixSep
+}
+
+// IndexPrefixSep returns table's prefix '_i'.
+func IndexPrefixSep() []byte {
+	return indexPrefixSep
 }
 
 // appendTableRecordPrefix appends table record prefix  "t[tableID]_r".
@@ -98,7 +109,16 @@ func DecodeRecordKey(key kv.Key) (tableID int64, handle int64, err error) {
 	 *   5. understanding the coding rules is a prerequisite for implementing this function,
 	 *      you can learn it in the projection 1-2 course documentation.
 	 */
-	return
+	fmt.Println("DecodeRecordKey func")
+	if key == nil {
+		return 0, 0, errInvalidKey
+	}
+	tablePrefix := DecodeTableID(key)
+	recordPrefix, err1 := DecodeRowKey(key)
+	if err1 != nil {
+		return 0, 0, errInvalidRecordKey
+	}
+	return tablePrefix, recordPrefix, err1
 }
 
 // appendTableIndexPrefix appends table index prefix  "t[tableID]_i".
@@ -148,7 +168,19 @@ func DecodeIndexKeyPrefix(key kv.Key) (tableID int64, indexID int64, indexValues
 	 *   5. understanding the coding rules is a prerequisite for implementing this function,
 	 *      you can learn it in the projection 1-2 course documentation.
 	 */
-	return tableID, indexID, indexValues, nil
+	fmt.Println("DecodeIndexKeyPrefix")
+	if key == nil {
+		return 0, 0, nil, errInvalidKey
+	}
+	tableDecode, indexDecode, isRecord, err := DecodeKeyHead(key)
+	if err != nil {
+		return 0, 0, nil, err
+	}
+	if isRecord {
+		return 0, 0, nil, errInvalidIndexKey.GenWithStack("InvalidIndexKey")
+	}
+	indexValues = key[prefixLen+idLen:]
+	return tableDecode, indexDecode, indexValues, nil
 }
 
 // DecodeIndexKey decodes the key and gets the tableID, indexID, indexValues.

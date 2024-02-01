@@ -3811,14 +3811,23 @@ JoinTable:
 	}
 	/* Project 2: your code here.
 	 * You can see details about JoinTable in https://dev.mysql.com/doc/refman/8.0/en/join.html
-	 *
-	 * joined_table: {
-         *     table_reference {[INNER | CROSS] JOIN | STRAIGHT_JOIN} table_factor [join_specification]
-         *   | table_reference {LEFT|RIGHT} [OUTER] JOIN table_reference join_specification
-         *   | table_reference NATURAL [INNER | {LEFT|RIGHT} [OUTER]] JOIN table_factor
-         * }
-         *
 	 */
+|	TableRef JoinType "JOIN" TableRef "ON" Expression %prec tableRefPriority
+	{
+		$$ = &ast.Join{
+		     Left: $1.(ast.ResultSetNode),   // 这里取出第1个部分TableRef的值作为Left
+		     Right: $4.(ast.ResultSetNode),  // 这里取出第4个部分TableRef的值作为Right
+		     Tp: $2.(ast.JoinType),          // 这里取出第2部分的JoinType的值作为Tp
+		     On: &ast.OnCondition{Expr: $6.(ast.ExprNode)}, // 这里是我们新增的部分，标识条件，即第6部分Expression的值
+		}
+	}
+	// $$表示本节点的值，$[n]标识结构中第n的部分的值，从1开始
+//	  joined_table: {
+//              table_reference {[INNER | CROSS] JOIN | STRAIGHT_JOIN} table_factor [join_specification]
+//            | table_reference {LEFT|RIGHT} [OUTER] JOIN table_reference join_specification
+//            | table_reference NATURAL [INNER | {LEFT|RIGHT} [OUTER]] JOIN table_factor
+//          }
+
 
 JoinType:
 	"LEFT"
