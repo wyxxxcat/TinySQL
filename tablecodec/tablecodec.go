@@ -113,12 +113,12 @@ func DecodeRecordKey(key kv.Key) (tableID int64, handle int64, err error) {
 	if key == nil {
 		return 0, 0, errInvalidKey
 	}
-	tablePrefix := DecodeTableID(key)
-	recordPrefix, err1 := DecodeRowKey(key)
-	if err1 != nil {
-		return 0, 0, errInvalidRecordKey
+	tblpre := DecodeTableID(key)
+	rowket, err := DecodeRowKey(key)
+	if err != nil {
+		return 0, 0, err
 	}
-	return tablePrefix, recordPrefix, err1
+	return tblpre, rowket, nil
 }
 
 // appendTableIndexPrefix appends table index prefix  "t[tableID]_i".
@@ -172,15 +172,15 @@ func DecodeIndexKeyPrefix(key kv.Key) (tableID int64, indexID int64, indexValues
 	if key == nil {
 		return 0, 0, nil, errInvalidKey
 	}
-	tableDecode, indexDecode, isRecord, err := DecodeKeyHead(key)
+	tb_id, idx_id, is_recoder, err := DecodeKeyHead(key)
 	if err != nil {
 		return 0, 0, nil, err
 	}
-	if isRecord {
-		return 0, 0, nil, errInvalidIndexKey.GenWithStack("InvalidIndexKey")
+	if is_recoder {
+		return 0, 0, nil, errInvalidRecordKey.GenWithStack("invalid recorder")
 	}
-	indexValues = key[prefixLen+idLen:]
-	return tableDecode, indexDecode, indexValues, nil
+	idx_v := key[prefixLen+idLen:]
+	return tb_id, idx_id, idx_v, nil
 }
 
 // DecodeIndexKey decodes the key and gets the tableID, indexID, indexValues.
